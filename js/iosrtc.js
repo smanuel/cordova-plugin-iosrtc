@@ -69,6 +69,11 @@ module.exports = {
 	// Debug function to see what happens internally.
 	dump: dump,
 
+	// main view background color functions
+	saveBackgroundColor: saveBackgroundColor,
+	restoreBackgroundColor: restoreBackgroundColor,
+	setMaximizedState: setMaximizedState,
+
 	// Debug Stores to see what happens internally.
 	mediaStreamRenderers: mediaStreamRenderers,
 	mediaStreams: mediaStreams
@@ -243,4 +248,49 @@ function registerGlobals(doNotRestoreCallbacksSupport) {
 
 function dump() {
 	exec(null, null, 'iosrtcPlugin', 'dump', []);
+}
+
+function saveBackgroundColor() {
+	return new Promise(function (resolve, reject) {
+		// jshint unused:false
+		function onResultOK(data) {
+			resolve();
+		}
+
+		function onResultError(error) {
+			reject(error);
+		}
+
+		exec(onResultOK, onResultError, 'iosrtcPlugin', 'saveBackgroundColor', []);
+	});
+}
+
+function restoreBackgroundColor() {
+	return new Promise(function (resolve, reject) {
+		// jshint unused:false
+		function onResultOK(data) {
+			resolve();
+		}
+
+		function onResultError(error) {
+			reject(error);
+		}
+
+		exec(onResultOK, onResultError, 'iosrtcPlugin', 'restoreBackgroundColor', []);
+	});
+}
+
+function setMaximizedState(isMaximized) {
+	return new Promise(function (resolve, reject) {
+		// jshint unused:false
+		function onResultOK(data) {
+			resolve();
+		}
+
+		function onResultError(error) {
+			reject(error);
+		}
+
+		exec(onResultOK, onResultError, 'iosrtcPlugin', 'setMaximizedState', [isMaximized]);
+	});
 }

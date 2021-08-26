@@ -15,12 +15,15 @@ class PluginMediaStreamRenderer : NSObject, RTCEAGLVideoViewDelegate {
 	var rtcAudioTrack: RTCAudioTrack?
 	var rtcVideoTrack: RTCVideoTrack?
     var pluginVideoTrack: PluginMediaStreamTrack?
+	var plugin: iosrtcPlugin!
 
 	init(
 		webView: UIView,
-		eventListener: @escaping (_ data: NSDictionary) -> Void
+		eventListener: @escaping (_ data: NSDictionary) -> Void,
+		_ plugin: iosrtcPlugin
 	) {
 		NSLog("PluginMediaStreamRenderer#init()")
+		self.plugin = plugin
 
 		// Open Renderer
 		self.id = UUID().uuidString;
@@ -39,6 +42,7 @@ class PluginMediaStreamRenderer : NSObject, RTCEAGLVideoViewDelegate {
 				NSLog("PluginMediaStreamRenderer#init() | clear background color for %@", svDesc)
 			}
 		}
+		self.webView.superview!.backgroundColor = UIColor.black
 		self.eventListener = eventListener
 
 		let useManualLayoutRenderer = Bundle.main.object(forInfoDictionaryKey: "UseManualLayoutRenderer") as? Bool ?? false
@@ -186,6 +190,21 @@ class PluginMediaStreamRenderer : NSObject, RTCEAGLVideoViewDelegate {
 	}
 
 	func refresh(_ data: NSDictionary) {
+		for sv in self.webView.subviews {
+			let svDesc = String(describing: sv)
+			if sv.isOpaque {
+				sv.isOpaque = false
+				NSLog("PluginMediaStreamRenderer#refresh() | clear opaque for %@", svDesc)
+			}
+			if sv.backgroundColor != UIColor.clear {
+				sv.backgroundColor = UIColor.clear
+				NSLog("PluginMediaStreamRenderer#refresh() | clear background color for %@", svDesc)
+			}
+		}
+		if self.plugin.isMaximized {
+			NSLog("PluginMediaStreamRenderer#refresh() | set black background color")
+			self.webView.superview!.backgroundColor = UIColor.black
+		}
 
 		let elementLeft = data.object(forKey: "elementLeft") as? Double ?? 0
 		let elementTop = data.object(forKey: "elementTop") as? Double ?? 0

@@ -20,6 +20,9 @@ class iosrtcPlugin : CDVPlugin {
 	var queue: DispatchQueue!
 	// Auto selecting output speaker
 	var audioOutputController: PluginRTCAudioController!
+	//
+	var backgroundColor: UIColor?;
+	var isMaximized: Bool = true
 
 
 	// This is just called if <param name="onload" value="true" /> in plugin.xml.
@@ -1065,7 +1068,8 @@ class iosrtcPlugin : CDVPlugin {
 				// Allow more callbacks.
 				result?.setKeepCallbackAs(true);
 				self.emit(command.callbackId, result: result!)
-			}
+			},
+			self
 		)
 
 		// Store into the dictionary.
@@ -1093,7 +1097,11 @@ class iosrtcPlugin : CDVPlugin {
 			return;
 		}
 
-		pluginMediaStreamRenderer!.render(pluginMediaStream!)
+		self.queue.async {
+			DispatchQueue.main.async { [weak pluginMediaStreamRenderer, weak pluginMediaStream] in
+				pluginMediaStreamRenderer!.render(pluginMediaStream!)
+			}
+		}
 	}
 
 	@objc(MediaStreamRenderer_mediaStreamChanged:) func MediaStreamRenderer_mediaStreamChanged(_ command: CDVInvokedUrlCommand) {
@@ -1107,7 +1115,11 @@ class iosrtcPlugin : CDVPlugin {
 			return;
 		}
 
-		pluginMediaStreamRenderer!.mediaStreamChanged()
+		self.queue.async {
+			DispatchQueue.main.async { [weak pluginMediaStreamRenderer] in
+				pluginMediaStreamRenderer!.mediaStreamChanged()
+			}
+		}
 	}
 
 	@objc(MediaStreamRenderer_refresh:) func MediaStreamRenderer_refresh(_ command: CDVInvokedUrlCommand) {
@@ -1122,7 +1134,13 @@ class iosrtcPlugin : CDVPlugin {
 			return;
 		}
 
-		pluginMediaStreamRenderer!.refresh(data)
+		self.queue.async { [weak pluginMediaStreamRenderer] in
+			DispatchQueue.main.async { [weak pluginMediaStreamRenderer] in
+				if pluginMediaStreamRenderer != nil {
+					pluginMediaStreamRenderer!.refresh(data)
+				}
+			}
+		}
 	}
 
 	@objc(MediaStreamRenderer_save:) func MediaStreamRenderer_save(_ command: CDVInvokedUrlCommand) {
@@ -1169,10 +1187,14 @@ class iosrtcPlugin : CDVPlugin {
 			return
 		}
 
-		pluginMediaStreamRenderer!.close()
+		self.queue.async {
+			DispatchQueue.main.async { [weak pluginMediaStreamRenderer] in
+				pluginMediaStreamRenderer!.close()
 
-		// Remove from the dictionary.
-		self.pluginMediaStreamRenderers[id] = nil
+				// Remove from the dictionary.
+				self.pluginMediaStreamRenderers[id] = nil
+			}
+		}
 	}
 
 	@objc(getUserMedia:) func getUserMedia(_ command: CDVInvokedUrlCommand) {
@@ -1468,4 +1490,41 @@ class iosrtcPlugin : CDVPlugin {
 						]))
 		}
 	}
+
+	@objc(saveBackgroundColor:) func saveBackgroundColor(_ command: CDVInvokedUrlCommand) {
+		NSLog("iosrtcPlugin#saveBackgroundColor()")
+
+		DispatchQueue.main.async {
+			self.backgroundColor = self.webView.superview!.backgroundColor;
+		}
+
+		self.emit(command.callbackId,
+			  result: CDVPluginResult(status: CDVCommandStatus_OK)
+		)
+	}
+
+	@objc(restoreBackgroundColor:) func restoreBackgroundColor(_ command: CDVInvokedUrlCommand) {
+		NSLog("iosrtcPlugin#restoreBackgroundColor()")
+
+		DispatchQueue.main.async {
+			if self.backgroundColor != nil {
+				self.webView.superview!.backgroundColor = self.backgroundColor
+			}
+		}
+
+		self.emit(command.callbackId,
+			  result: CDVPluginResult(status: CDVCommandStatus_OK)
+		)
+	}
+
+	@objc(setMaximizedState:) func setMaximizedState(_ command: CDVInvokedUrlCommand) {
+		NSLog("iosrtcPlugin#setMaximizedState()")
+
+		self.isMaximized = command.argument(at: 0) as! Bool
+
+		self.emit(command.callbackId,
+			  result: CDVPluginResult(status: CDVCommandStatus_OK)
+		)
+	}
+
 }
